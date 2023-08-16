@@ -1,11 +1,11 @@
 use crate::{
-    bounds::assert_in_bounds, IdentityVoxel, OrientedBlockFace, UnitQuadBuffer, UnorientedUnitQuad, Voxel, VoxelVisibility,
+    bounds::assert_in_bounds, IdentityVoxel, OrientedBlockFace, UnitQuadBuffer, UnorientedUnitQuad,
+    Voxel, VoxelVisibility,
 };
 
 use ilattice::glam::UVec3;
 use ilattice::prelude::Extent;
 use ndshape::Shape;
-
 
 /// A fast and simple meshing algorithm that produces a single quad for every visible face of a block.
 ///
@@ -62,7 +62,7 @@ pub fn visible_block_faces_with_voxel_view<'a, T, V, S>(
         let p_array = p.to_array();
         let p_index = voxels_shape.linearize(p_array);
         let p_voxel = V::from(unsafe { voxels.get_unchecked(p_index as usize) });
-
+        let always_mesh = p_voxel.get_visibility() == VoxelVisibility::Translucent(true);
         if let VoxelVisibility::Empty = p_voxel.get_visibility() {
             continue;
         }
@@ -71,11 +71,11 @@ pub fn visible_block_faces_with_voxel_view<'a, T, V, S>(
             let neighbor_index = p_index.wrapping_add(face_stride);
             let neighbor_voxel = V::from(unsafe { voxels.get_unchecked(neighbor_index as usize) });
 
-            // TODO: If the face lies between two transparent voxels, we choose not to mesh it. We might need to extend the
-            // IsOpaque trait with different levels of transparency to support this.
             let face_needs_mesh = match neighbor_voxel.get_visibility() {
                 VoxelVisibility::Empty => true,
-                VoxelVisibility::Translucent => p_voxel.get_visibility() == VoxelVisibility::Opaque,
+                VoxelVisibility::Translucent(_) => {
+                    always_mesh || p_voxel.get_visibility() == VoxelVisibility::Opaque
+                }
                 VoxelVisibility::Opaque => false,
             };
 
@@ -139,5 +139,4 @@ mod tests {
             }
         }
     }
-
 }

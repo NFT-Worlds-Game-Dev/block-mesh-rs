@@ -2,7 +2,9 @@ mod merge_strategy;
 
 pub use merge_strategy::*;
 
-use crate::{bounds::assert_in_bounds, OrientedBlockFace, QuadBuffer, UnorientedQuad, Voxel, VoxelVisibility};
+use crate::{
+    bounds::assert_in_bounds, OrientedBlockFace, QuadBuffer, UnorientedQuad, Voxel, VoxelVisibility,
+};
 
 use ilattice::glam::UVec3;
 use ilattice::prelude::Extent;
@@ -240,14 +242,16 @@ where
         return false;
     }
 
+    let always_mesh = voxel.get_visibility() == VoxelVisibility::Translucent(true);
+
     let adjacent_voxel =
         voxels.get_unchecked(voxel_stride.wrapping_add(visibility_offset) as usize);
 
-    // TODO: If the face lies between two transparent voxels, we choose not to mesh it. We might need to extend the IsOpaque
-    // trait with different levels of transparency to support this.
     match adjacent_voxel.get_visibility() {
         VoxelVisibility::Empty => true,
-        VoxelVisibility::Translucent => voxel.get_visibility() == VoxelVisibility::Opaque,
+        VoxelVisibility::Translucent(_) => {
+            always_mesh || voxel.get_visibility() == VoxelVisibility::Opaque
+        }
         VoxelVisibility::Opaque => false,
     }
 }

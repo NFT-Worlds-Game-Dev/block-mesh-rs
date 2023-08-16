@@ -98,7 +98,8 @@ pub enum VoxelVisibility {
     /// This voxel should not produce any geometry.
     Empty,
     /// Should produce geometry, and also light can pass through.
-    Translucent,
+    /// The boolean value determines whether a translucent face should be rendered when it is adjacent to another translucent face.
+    Translucent(bool),
     /// Light cannot pass through this voxel.
     Opaque,
 }
